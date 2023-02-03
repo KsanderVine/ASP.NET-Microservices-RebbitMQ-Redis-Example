@@ -1,0 +1,135 @@
+version: '3.2'
+services:
+
+  nginx:
+    build: 
+      context: ./Nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    volumes:
+      - /templates:/etc/nginx/templates
+    ports:
+      - "8080:80"
+    environment:
+      - NGINX_HOST=backend-marvel.com
+      - NGINX_PORT=80
+    networks:
+      - microservices
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - microservices
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 30s
+      timeout: 30s
+      retries: 100
+    networks:
+      - microservices
+
+  configuration:
+    build: 
+      context: ./
+      dockerfile: Dockerfile.Configuration
+    container_name: configuration
+    depends_on:
+      nginx:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  ### This is only for testing reasons
+  simulation:
+    build: 
+      context: ./
+      dockerfile: Dockerfile.Simulation
+    container_name: simulation
+    depends_on:
+      users:
+        condition: service_started
+      films:
+        condition: service_started
+      comments:
+        condition: service_started
+      ratings:
+        condition: service_started
+    networks:
+      - microservices
+  ### No more testing reasons
+
+  users:
+    build: 
+      context: ./
+      dockerfile: Dockerfile.Users
+    container_name: users
+    ports:
+      - "8081:80"
+      - "44341:443"
+    depends_on:
+      configuration:
+        condition: service_completed_successfully
+    networks:
+      - microservices
+
+  films:
+    build: 
+      context: ./
+      dockerfile: Dockerfile.Films
+    container_name: films
+    ports:
+      - "8082:80"
+      - "44342:443"
+    depends_on:
+      configuration:
+        condition: service_completed_successfully
+    networks:
+      - microservices
+
+  comments:
+    build: 
+      context: ./
+      dockerfile: Dockerfile.Comments
+    container_name: comments
+    ports:
+      - "8083:80"
+      - "44343:443"
+    depends_on:
+      users:
+        condition: service_started
+      films:
+        condition: service_started
+    networks:
+      - microservices
+
+  ratings:
+    build: 
+      context: ./
+      dockerfile: Dockerfile.Ratings
+    container_name: ratings
+    ports:
+      - "8084:80"
+      - "44344:443"
+    depends_on:
+      users:
+        condition: service_started
+      films:
+        condition: service_started
+    networks:
+      - microservices
+
+networks:
+  microservices:
+    driver: bridge

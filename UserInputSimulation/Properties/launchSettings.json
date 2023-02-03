@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "UserInputSimulation": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

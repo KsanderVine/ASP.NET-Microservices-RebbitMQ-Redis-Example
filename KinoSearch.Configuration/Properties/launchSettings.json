@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "KinoSearch.Configuration": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
